@@ -2,7 +2,7 @@
 ![alt text](https://github.com/yesbo/Airbnb-recommendation-system-with-NLP/blob/master/Output/Output%20image/objectives.png)
 ## Result & interface:
 ![alt text](https://github.com/yesbo/Airbnb-recommendation-system-with-NLP/blob/master/Output/Output%20image/Result.png)
-## NLP model on customer reviews :[Quick Demo in Youtube](https://www.google.com)
+## Keyword search-engine with NLP model on customer reviews :[Quick Demo in Youtube](https://www.google.com)
 ![alt text](https://github.com/yesbo/Airbnb-recommendation-system-with-NLP/blob/master/Output/Output%20image/LDA1.png)
 ![alt text](https://github.com/yesbo/Airbnb-recommendation-system-with-NLP/blob/master/Output/Output%20image/LDA2.png)
 
