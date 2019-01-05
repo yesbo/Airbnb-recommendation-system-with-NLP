@@ -1,0 +1,102 @@
+---
+title: "linear regresssion"
+author: "Yanzi Shen, ys3088"
+date: "November 27, 2018"
+output: pdf_document
+---
+
+```{r}
+train<-read.csv("train.csv")
+test<-read.csv("test.csv")
+x_train<-train[,c(3:211,213:435)]
+y_train<-train[,212]
+
+x_test<-test[,c(3:211,213:435)]
+y_test<-test[,212]
+```
+
+```{r}
+ols<-lm(y_train~., data = x_train)
+summary(ols)
+par(mflow=c(2,2))
+plot(ols)
+```
+
+```{r}
+#R^2
+R_square <- function(y_fit, y_true){
+  sse <- sum((y_true-y_fit)^2)
+  sst <- sum((y_true - mean(y_true))^2)
+  R_square <- 1 - sse/sst
+  return(R_square)
+}
+```
+
+```{r}
+ols_pred <- predict(ols, x_test)
+R_square(ols_pred, y_test)
+
+RMSE_ols<- sqrt(mean((y_test - ols_pred)^2))
+RMSE_ols
+```
+
+```{r}
+library(car)
+vif(ols)
+```
+Multicolinirity 
+
+###Model selection
+```{r}
+#null<-lm(y_train~1, data = x_train)
+#stepwise<- step(null, scope=list(lower=null, upper=ols), direction="forward")
+
+
+
+library(leaps)
+step <-regsubsets(y_train~., data = x_train, method = "forward")
+as.data.frame(summary(step)$outmat)
+summary(step)$rss
+summary(step)$rsq
+summary(step)$bic
+```
+
+
+```{r}
+ols_step<-lm(y_train~host_is_superhost+availability_365+instant_bookable+amenities_Hair_dryer+host_varification_.reviews.+amenities_Dryer+property_type_Train+amenities_Wifi+amenities_Smoking_allowed, data = x_train)
+
+summary(ols_step)
+library(DAAG)
+vif(ols_step) #not multicoliearity 
+```
+
+```{r}
+ols_step_pred <- predict(ols_step, newdata = x_test)
+R2_ols_step<-R_square(ols_step_pred, y_test)
+
+RMSE_ols_step <- sqrt(mean((y_test - ols_step_pred )^2))
+RMSE_ols_step
+```
+```{r}
+plot(ols_step)
+qqnorm(ols_step$residual)
+qqline(ols_step$residual)
+ks.test(ols_step$residual, "pnorm")
+durbinWatsonTest(ols_step)
+```
+Assumptions invalid. 
+
+PCR
+```{r}
+library(pls)
+pcr_model<- pcr(y_train~., data = x_train,40,alidation = "CV")
+summary(pcr_model)
+validationplot(pcr_model)
+validationplot(pcr_model, val.type="R2")
+coefplot(pcr_model)
+pcr_pred <- predict(pcr_model, x_test,ncomp =37)
+RMSE_ols_step <- sqrt(mean((y_test - pcr_pred)^2))
+RMSE_ols_step
+
+R_square(pcr_pred,y_test) 
+```

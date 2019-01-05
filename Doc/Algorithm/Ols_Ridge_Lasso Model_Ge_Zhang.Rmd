@@ -1,0 +1,146 @@
+---
+title: "Ridge/Lasso Model"
+author: "Ge Zhang (gz2262)"
+date: "October 28, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+train<-read.csv("train.csv")
+test<-read.csv("test.csv")
+sel<-c(3:211,213:435)
+y_train<-train[,212]
+y_test<-test[,212]
+x_train<-train[,sel]
+x_test<-train[,sel]
+```
+
+```{r}
+#OLS
+r_square <- function(y_fit, y_true){
+  tss <- sum((y_true - mean(y_true))^2)
+  rss <- sum((y_fit - y_true)^2)
+  r_square <- 1 - rss/tss
+return(r_square)
+}
+
+ols_f <- lm(y_train~., data = x_train)
+system.time(ols_f <-lm(y_train~., data = x_train))
+summary(ols_f)
+plot(ols_f)
+#
+ols.pred_f <- predict(ols_f, newdata = x_test)
+r_square(ols.pred_f, y_test) #r^2 on the test set
+RMSE_ols<- sqrt(mean((y_test - ols.pred_f)^2))
+RMSE_ols
+
+#check colinearity
+library(DAAG)
+ols_vif<-vif(ols_f) 
+
+#Stepwise
+library(leaps)
+step.ols <-regsubsets(x = x_train, y = y_train, method = "forward", all.best = TRUE)
+system.time(step.ols <-regsubsets(x = x_train, y = y_train, method = "forward", all.best = TRUE))
+result <-summary(step.ols)        
+step.ols_result <-data.frame(result$outmat,RSS=result$rss,R2=result$rsq)
+step.ols_result # the sequence of adding variables
+#host_is_superhost(9);property_type_Train(3);availability_365(8);amenities_Dryer(4);amenities_Hair_dryer(6);amenities_Wifi(2);amenities_Smoking_allowed(1);instant_bookable(7);host_varification_.reviews.(5)
+
+#Stepwise add variabe and check VIF in each step
+step1<-lm(y_train~host_is_superhost,data = x_train)
+vif(step1)
+step2<-lm(y_train~host_is_superhost+availability_365, data = x_train)
+vif(step2)
+step3<-lm(y_train~host_is_superhost+availability_365+instant_bookable, data = x_train)
+vif(step3)
+abs(coef(step3))
+step4<-lm(y_train~host_is_superhost+availability_365+instant_bookable+amenities_Hair_dryer, data = x_train)
+vif(step4)
+step5<-lm(y_train~host_is_superhost+availability_365+instant_bookable+amenities_Hair_dryer+host_varification_.reviews., data = x_train)
+vif(step5)
+step6<-lm(y_train~host_is_superhost+availability_365+instant_bookable+amenities_Hair_dryer+host_varification_.reviews.+amenities_Dryer, data = x_train)
+vif(step6)
+
+summary(step6)
+
+ols.pred_step <- predict(step6, newdata = x_test)
+r_square(ols.pred_step, y_test) #r^2 on the test set
+RMSE_ols_step <- sqrt(mean((y_test - ols.pred_step)^2))
+RMSE_ols_step
+```
+
+```{r}
+#lasso
+library(glmnet)
+lasso.fit<-glmnet(as.matrix(x_train), y_train, alpha = 1, standardize = FALSE)
+#use cross-validation to choose parameter lambda
+set.seed(1)
+lambda_range <- seq(exp(-16), exp(8))
+lasso.cv<-cv.glmnet(as.matrix(x_train), y_train, alpha = 1, standardize = FALSE, lambda = lambda_range)
+
+system.time(lasso.cv<-cv.glmnet(as.matrix(x_train), y_train, alpha = 1, standardize = FALSE, lambda = lambda_range))
+
+plot(lasso.cv)
+
+bestlam_lasso <- lasso.cv$lambda.1se
+bestlam_lasso
+best.lasso.fit<-glmnet(as.matrix(x_train), y_train, alpha = 1, standardize = FALSE, lambda = bestlam_lasso)
+
+#apply trained model to test data
+lasso.pred <- predict(lasso.fit, s = bestlam_lasso,newx = as.matrix(x_test))
+#compute r-square
+r_square_lasso <- r_square(lasso.pred, y_test)
+r_square_lasso
+RMSE_lasso <- sqrt(mean((y_test - lasso.pred)^2))
+RMSE_lasso
+```
+
+```{r}
+#ridge regression model
+ridge.fit<-glmnet(as.matrix(x_train), y_train, alpha = 0, standardize = FALSE)
+plot(ridge.fit, xvar = "lambda", label = TRUE)
+#use cross-validation to choose best parameter lambda
+set.seed(10)
+
+ridge.cv<-cv.glmnet(as.matrix(x_train), y_train, alpha = 0, standardize = FALSE, lambda = lambda_range)
+
+system.time(ridge.cv<-cv.glmnet(as.matrix(x_train), y_train, alpha = 0, standardize = FALSE, lambda = lambda_range))
+
+plot(ridge.cv)
+bestlam_ridge <- ridge.cv$lambda.1se
+#apply trained ridge model to test data
+ridge.pred <- predict(ridge.fit ,s = bestlam_ridge ,newx = as.matrix(x_test))
+#compute r-square of test result
+r_square_ridge <- r_square(ridge.pred, y_test)
+r_square_ridge
+RMSE_ridge <- sqrt(mean((y_test - ridge.pred)^2))
+RMSE_ridge
+```
+
+```{r}
+#Elatic Net
+elnet.fit<-glmnet(as.matrix(x_train), y_train, alpha = 0.5, standardize = FALSE)
+plot(elnet.fit, xvar = "lambda", label = TRUE)
+#use cross-validation to choose best parameter lambda
+set.seed(10)
+
+elnet.cv<-cv.glmnet(as.matrix(x_train), y_train, alpha = 0.5, standardize = FALSE, lambda = lambda_range)
+
+system.time(elnet.cv<-cv.glmnet(as.matrix(x_train), y_train, alpha = 0.5, standardize = FALSE, lambda = lambda_range))
+
+plot(elnet.cv)
+bestlam_elnet <- elnet.cv$lambda.1se
+#apply trained elastic net model to test data
+elnet.pred <- predict(elnet.fit ,s = bestlam_elnet, newx = as.matrix(x_test))
+#compute r-square of test result
+r_square_elnet <- r_square(elnet.pred, y_test)
+r_square_elnet
+RMSE_elnet<- sqrt(mean((y_test-elnet.pred)^2))
+RMSE_elnet
+```
+
