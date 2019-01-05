@@ -6,6 +6,6 @@
 ![alt text](https://github.com/yesbo/Airbnb-recommendation-system-with-NLP/blob/master/Output/Output%20image/LDA1.png)
 ![alt text](https://github.com/yesbo/Airbnb-recommendation-system-with-NLP/blob/master/Output/Output%20image/LDA2.png)
 
-## Machine learning models overview
+## Regression of review scores with Machine learning models
 ![alt text](https://github.com/yesbo/Airbnb-recommendation-system-with-NLP/blob/master/Output/Output%20image/ML%20models%20hirerchy.png)
-![alt text](![alt text](https://github.com/yesbo/Airbnb-recommendation-system-with-NLP/blob/master/Output/Output%20image/ML%20models%20hirerchy.png))
+![alt text](https://github.com/yesbo/Airbnb-recommendation-system-with-NLP/blob/master/Output/Output%20image/ML%20models%20summary.png)
